@@ -8,7 +8,7 @@ ID="$1"
 START_DATE="$2"
 END_DATE="$3"
 
-OUTPUT_FILE="pv/${ID}_PVdata.csv"
+OUTPUT_FILE="PVdata.csv"
 
 function send_error () {
 	echo "An error occurred..."
@@ -89,5 +89,5 @@ function execute_dates() {
 
 # SCRIPT START
 if [ $# -ne 3 ]; then send_error 1; fi
-
+mkdir $ID
 execute_dates
