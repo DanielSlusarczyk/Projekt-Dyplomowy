@@ -21,7 +21,7 @@ function send_error () {
             echo -e "\n"
             echo "Example:"
             echo -e "\n"
-            echo "  ./scrapper 10001 01-01-2023 31-12-2023"
+            echo "  ./scrapper 10001 2022-01-01 2022-12-23"
             echo -e "\n"
 			exit 1
 			;;
