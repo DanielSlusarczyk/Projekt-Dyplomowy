@@ -7,8 +7,8 @@ class PVData:
     from_date: Final[str]
     to_date: Final[str]
     input_data: Final[pd.DataFrame]
-
-
+    grouped_data = {}
+    
     def __init__(self, df_data: pd.DataFrame, verbose: bool = False):
         self.input_data = df_data
         self.verbose = verbose
@@ -23,6 +23,24 @@ class PVData:
             return self.data
         else:
             return self.data[columns]
+        
+    def group(self, by, function='mean') -> pd.DataFrame:
+
+        data = self.data.drop(['DateTime', 'Time', 'Date'], axis=1)
+
+        if str(by) in self.grouped_data:
+            data = self.grouped_data[str(by)]
+        else:
+            data = data.groupby(by)
+            self.grouped_data[str(by)] = data
+
+        if function == 'mean':
+            return pd.DataFrame(data.mean()).reset_index()
+        
+        if function == 'count':
+            return pd.DataFrame(data.size()).reset_index()
+
+        raise TypeError("Unimplemented method")
 
     def __define_types(self):
         self.input_data.rename(columns={'Moc chwilowa PV': 'PV_output'}, inplace=True)
