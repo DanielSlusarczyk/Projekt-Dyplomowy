@@ -1,3 +1,4 @@
+import calendar
 import pandas as pd
 from datetime import timedelta
 from typing import Final
@@ -7,7 +8,15 @@ class PVData:
     from_date: Final[str]
     to_date: Final[str]
     input_data: Final[pd.DataFrame]
+
     grouped_data = {}
+    production_data = None
+
+    max_production = None
+    nmb_of_days = None
+    nmb_of_months = None
+    nmb_of_years = None
+    month_names = dict((i, month_name) for i, month_name in enumerate(calendar.month_name) if i != 0)
     
     def __init__(self, df_data: pd.DataFrame, verbose: bool = False):
         self.input_data = df_data
@@ -17,6 +26,7 @@ class PVData:
         self.__define_range()
         self.__fill()
         self.__split()
+        self.__info()
 
     def get(self, columns=None) -> pd.DataFrame:
         if columns is None:
@@ -38,9 +48,69 @@ class PVData:
             return pd.DataFrame(data.mean()).reset_index()
         
         if function == 'count':
-            return pd.DataFrame(data.size()).reset_index()
+            return pd.DataFrame(data.size().reset_index(name='Count'))
+        
+        if function == 'min':
+            return pd.DataFrame(data.min()).reset_index()
+        
+        if function == 'sum':
+            return pd.DataFrame(data.sum()).reset_index()
+
+        if function == 'max':
+            return pd.DataFrame(data.max()).reset_index()
 
         raise TypeError("Unimplemented method")
+    
+    def production(self, year=None, month=None, day=None) -> pd.DataFrame:
+        if self.production_data is None:
+            data = self.get(columns=['Time', 'Date', 'DateTime'])
+
+            # Start and end of production
+            start_per_day = pd.DataFrame(data.groupby(['Date']).min().reset_index())
+            end_per_day = pd.DataFrame(data.groupby(['Date']).max().reset_index())
+
+            # Time of production
+            time_diff = end_per_day['DateTime'] - start_per_day['DateTime']
+            pv_timing = pd.DataFrame({'Date' : start_per_day['Date'], 'Start' : start_per_day['Time'], 'End' : end_per_day['Time'], 'Time': time_diff.dt.total_seconds() / 3600})
+
+            # Prepare dateframe
+            per_day = self.group(['Year', 'Month', 'Day'])[['Year', 'Month', 'Day', 'PV_output']]
+            per_day['Time'] = pv_timing['Time']
+            per_day['Output'] = pv_timing['Time'] * per_day['PV_output']
+            per_day.rename(columns={'PV_output': 'Avg_output'}, inplace=True)
+
+            self.production_data = per_day
+
+            self.max_production = per_day['Output'].max()
+
+        filtered_date = self.production_data
+        if year is not None:
+            filtered_date = filtered_date[(filtered_date['Year'] == year)]
+
+            if month is not None:
+                filtered_date = filtered_date[(filtered_date['Month'] == month)]
+
+                if day is not None:
+                    filtered_date = filtered_date[(filtered_date['Day'] == day)]
+
+        return filtered_date
+    
+    def samples(self, year=None, month=None, day=None) -> pd.DataFrame:
+
+        filtered_date = self.data
+        if year is not None:
+            filtered_date = filtered_date[(filtered_date['Year'] == year)]
+
+            if month is not None:
+                filtered_date = filtered_date[(filtered_date['Month'] == month)]
+
+                if day is not None:
+                    filtered_date = filtered_date[(filtered_date['Day'] == day)]
+
+        filtered_date['Plot_time'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
+        
+        return filtered_date
+
 
     def __define_types(self):
         self.input_data.rename(columns={'Moc chwilowa PV': 'PV_output'}, inplace=True)
@@ -60,7 +130,7 @@ class PVData:
         if self.verbose:
             print('Missing days: ', end='')
 
-        # Fill missing probes from day with example probe     
+        # Fill missing probes from day with example probe
         while tmp_date <= self.to_date:
 
             if not tmp_date in self.input_data['DateTime'].dt.date.values:
@@ -87,3 +157,13 @@ class PVData:
         self.data['Second'] = self.data['DateTime'].dt.second
         self.data['Date'] = self.data['DateTime'].dt.date
         self.data['Time'] = self.data['DateTime'].dt.time
+
+    def __info(self):
+        days = self.group(['Year', 'Month', 'Day'])
+        self.nmb_of_days = len(days)
+
+        months = self.group(['Year', 'Month'])
+        self.nmb_of_months = len(months)
+
+        years = self.group(['Year'])
+        self.nmb_of_years = len(years)
