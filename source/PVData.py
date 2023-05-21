@@ -12,27 +12,60 @@ class PVData:
     def __init__(self, df_data: pd.DataFrame, verbose: bool = False):
         self.input_data = df_data
         self.verbose = verbose
-        
+
+        self.__define_types()
         self.__define_range()
         self.__fill()
+        self.__split()
 
+    def get(self, columns=None) -> pd.DataFrame:
+        if columns is None:
+            return self.data
+        else:
+            return self.data[columns]
+
+    def __define_types(self):
+        self.input_data.rename(columns={'Moc chwilowa PV': 'PV_output'}, inplace=True)
+        self.input_data['DateTime'] = pd.to_datetime(self.input_data['DateTime'])
+    
     def __define_range(self):
-        self.from_date = pd.to_datetime(self.input_data['DateTime']).min().date()
-        self.to_date = pd.to_datetime(self.input_data['DateTime']).max().date()
+        self.from_date = self.input_data['DateTime'].min().date()
+        self.to_date = self.input_data['DateTime'].max().date()
 
         if self.verbose:
-            print(f'From %s to %s' % (self.from_date, self.to_date))
+            print(f'Dataset from %s to %s' % (self.from_date, self.to_date))
 
     def __fill(self):
-        self.input_data['DateTime'] = pd.to_datetime(self.input_data['DateTime'])
-
+        self.data = self.input_data.copy()
         tmp_date = self.from_date
 
+        if self.verbose:
+            print('Missing days: ', end='')
+
+        # Fill missing probes from day with example probe     
         while tmp_date <= self.to_date:
-            year, month, day = split_data(tmp_date)
-            
-            if len(pv[(pv['Year'] == year) & (pv['Month'] == month) & (pv['Day'] == day)]) == 0:
-                pv.loc[len(pv)]=['%s-%s-%s' % (year, month, day), 0, year, month, day, '00', '00', '00']
-                print('Day %s is missing' % (from_date))
+
+            if not tmp_date in self.input_data['DateTime'].dt.date.values:
+                if self.verbose:
+                    print('[%s] ' % (tmp_date), end='')
+
+                self.data.loc[len(self.data)] = {
+                    'DateTime' : pd.to_datetime('%s 12:00:00' % (tmp_date)),
+                    'Pv_output' : 0}
 
             tmp_date += timedelta(days=1)
+        
+        if self.verbose:
+            print('')
+
+        self.data.sort_values(by='DateTime', inplace=True)
+        
+    def __split(self):
+        self.data['Year'] = self.data['DateTime'].dt.year
+        self.data['Month'] = self.data['DateTime'].dt.month
+        self.data['Day'] = self.data['DateTime'].dt.day
+        self.data['Hour'] = self.data['DateTime'].dt.hour
+        self.data['Minute'] = self.data['DateTime'].dt.minute
+        self.data['Second'] = self.data['DateTime'].dt.second
+        self.data['Date'] = self.data['DateTime'].dt.date
+        self.data['Time'] = self.data['DateTime'].dt.time
