@@ -124,27 +124,40 @@ class PVData:
             print(f'Dataset from %s to %s' % (self.from_date, self.to_date))
 
     def __fill(self):
-        self.data = self.input_data.copy()
+        self.data = pd.DataFrame(self.input_data)
         tmp_date = self.from_date
 
         if self.verbose:
             print('Missing days: ', end='')
 
-        # Fill missing probes from day with example probe
+        
+        row_index = 0
+        nmb_of_rows = len(self.input_data)
+        missing_days = []
+
+        # Find missing days
         while tmp_date <= self.to_date:
+            if tmp_date == self.input_data.at[row_index, 'DateTime'].date():
 
-            if not tmp_date in self.input_data['DateTime'].dt.date.values:
-                if self.verbose:
-                    print('[%s] ' % (tmp_date), end='')
+                while row_index < nmb_of_rows and tmp_date == self.input_data.at[row_index, 'DateTime'].date():
+                    row_index += 1
 
-                self.data.loc[len(self.data)] = {
-                    'DateTime' : pd.to_datetime('%s 12:00:00' % (tmp_date)),
-                    'Pv_output' : 0}
+                tmp_date += timedelta(days=1)
+            else:
+                missing_days.append(tmp_date)
+                tmp_date += timedelta(days=1)
+        
+        # Fill missing days
+        for missing_day in missing_days:
+            if self.verbose:
+                print('[%s] ' % (missing_day), end='')
 
-            tmp_date += timedelta(days=1)
+            self.data.loc[len(self.data)] = {
+                'DateTime' : pd.to_datetime('%s 12:00:00' % (missing_day)),
+                'Pv_output' : 0}
         
         if self.verbose:
-            print('')
+            print('\nMissing days: %s\n' % (len(missing_days)))
 
         self.data.sort_values(by='DateTime', inplace=True)
         
@@ -167,3 +180,6 @@ class PVData:
 
         years = self.group(['Year'])
         self.nmb_of_years = len(years)
+
+        if self.verbose:
+            print('Summary:\n\tYears: \t%s \n\tMonths: \t%s \n\tDays: \t%s' %(self.nmb_of_years, self.nmb_of_months, self.nmb_of_days))
