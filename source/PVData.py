@@ -1,5 +1,6 @@
 import calendar
 import pandas as pd
+import numpy as np
 from datetime import timedelta
 from typing import Final
 from source.Operation import *
@@ -96,7 +97,7 @@ class PVData:
 
         return filtered_date
     
-    def samples(self, year=None, month=None, day=None, scale=None) -> pd.DataFrame:
+    def samples(self, year=None, month=None, day=None, scale=None, group_factor=1) -> pd.DataFrame:
 
         filtered_date = self.data
         if year is not None:
@@ -115,6 +116,10 @@ class PVData:
             filtered_date.reset_index(drop=True, inplace=True)
 
             filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
+
+        if group_factor > 1:
+            filtered_date = filtered_date.assign(Group=lambda x: np.floor(x['Minute']/group_factor))
+            filtered_date = filtered_date[['Date', 'Hour', 'Group', 'Plot_time', 'PV_output']].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
         
         return filtered_date
 
