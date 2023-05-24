@@ -31,17 +31,8 @@ class WData:
             return self.data
         else:
             return self.data[columns]
-        
-    def get_scaled(self, columns) -> pd.DataFrame:
-        scaler = MinMaxScaler()
-
-        df_scaled = pd.DataFrame(scaler.fit_transform(self.data[columns]), columns=columns)
-        df_scaled['DateTime'] = self.data['DateTime']
-
-        return df_scaled
-
     
-    def samples(self, year=None, month=None, day=None) -> pd.DataFrame:
+    def samples(self, year=None, month=None, day=None, scale=None) -> pd.DataFrame:
 
         filtered_date = self.data
         if year is not None:
@@ -53,7 +44,13 @@ class WData:
                 if day is not None:
                     filtered_date = filtered_date[(filtered_date['Day'] == day)]
 
-        filtered_date['Plot_time'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
+        filtered_date['PlotTime'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
+
+        if scale is not None:
+            scaler = MinMaxScaler()
+            filtered_date.reset_index(drop=True, inplace=True)
+
+            filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
         
         return filtered_date
 

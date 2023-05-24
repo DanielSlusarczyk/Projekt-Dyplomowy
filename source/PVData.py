@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import timedelta
 from typing import Final
 from source.Operation import *
+from sklearn.preprocessing import MinMaxScaler
 
 class PVData:
     from_date: Final[str]
@@ -95,7 +96,7 @@ class PVData:
 
         return filtered_date
     
-    def samples(self, year=None, month=None, day=None) -> pd.DataFrame:
+    def samples(self, year=None, month=None, day=None, scale=None) -> pd.DataFrame:
 
         filtered_date = self.data
         if year is not None:
@@ -108,6 +109,12 @@ class PVData:
                     filtered_date = filtered_date[(filtered_date['Day'] == day)]
 
         filtered_date['Plot_time'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
+
+        if scale is not None:
+            scaler = MinMaxScaler()
+            filtered_date.reset_index(drop=True, inplace=True)
+
+            filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
         
         return filtered_date
 
