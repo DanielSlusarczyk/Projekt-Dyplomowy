@@ -109,7 +109,7 @@ class PVData:
                 if day is not None:
                     filtered_date = filtered_date[(filtered_date['Day'] == day)]
 
-        filtered_date['Plot_time'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
+        filtered_date['PlotTime'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
 
         if scale is not None:
             scaler = MinMaxScaler()
@@ -119,7 +119,7 @@ class PVData:
 
         if group_factor > 1:
             filtered_date = filtered_date.assign(Group=lambda x: np.floor(x['Minute']/group_factor))
-            filtered_date = filtered_date[['Date', 'Hour', 'Group', 'Plot_time', 'PV_output']].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
+            filtered_date = filtered_date[['Date', 'Hour', 'Group', 'PlotTime', 'PV_output']].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
         
         return filtered_date
 
