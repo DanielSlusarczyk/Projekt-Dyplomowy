@@ -97,9 +97,11 @@ class PVData:
 
         return filtered_date
     
-    def samples(self, year=None, month=None, day=None, scale=None, group_factor=1) -> pd.DataFrame:
+    def samples(self, year=None, month=None, day=None, scale=None, group_factor=1, feature_range=(0, 1)) -> pd.DataFrame:
 
         filtered_date = self.data
+        scaled_cols = []
+
         if year is not None:
             filtered_date = filtered_date[(filtered_date['Year'] == year)]
 
@@ -112,14 +114,15 @@ class PVData:
         filtered_date['PlotTime'] = filtered_date['Hour'] * 3600 + filtered_date['Minute'] * 60 + filtered_date['Second']
 
         if scale is not None:
-            scaler = MinMaxScaler()
+            scaler = MinMaxScaler(feature_range=feature_range)
+            scaled_cols = [col + '_scaled' for col in scale]
             filtered_date.reset_index(drop=True, inplace=True)
 
-            filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
+            filtered_date[scaled_cols] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
 
         if group_factor > 1:
             filtered_date = filtered_date.assign(Group=lambda x: np.floor(x['Minute']/group_factor))
-            filtered_date = filtered_date[['Date', 'Hour', 'Group', 'PlotTime', 'PV_output']].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
+            filtered_date = filtered_date[['Date', 'Hour', 'Group', 'PlotTime', 'PV_output'] + scaled_cols].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
         
         return filtered_date
 
