@@ -34,7 +34,7 @@ class PVData:
         if columns is None:
             return self.data
         else:
-            return self.data[columns]
+            return pd.DataFrame(self.data[columns])
         
     def group(self, by, function='mean') -> pd.DataFrame:
 
@@ -95,7 +95,7 @@ class PVData:
                 if day is not None:
                     filtered_date = filtered_date[(filtered_date['Day'] == day)]
 
-        return filtered_date
+        return pd.DataFrame(filtered_date)
     
     def samples(self, year=None, month=None, day=None, scale=None, group_factor=1, feature_range=(0, 1)) -> pd.DataFrame:
 
@@ -124,12 +124,13 @@ class PVData:
             filtered_date = filtered_date.assign(Group=lambda x: np.floor(x['Minute']/group_factor))
             filtered_date = filtered_date[['Date', 'Hour', 'Group', 'PlotTime', 'PV_output'] + scaled_cols].groupby(['Date', 'Hour', 'Group']).mean().reset_index()
         
-        return filtered_date
+        return pd.DataFrame(filtered_date)
 
 
     def __define_types(self):
         self.input_data.rename(columns={'Moc chwilowa PV': 'PV_output'}, inplace=True)
         self.input_data['DateTime'] = pd.to_datetime(self.input_data['DateTime'])
+        self.input_data['PV_output'] = self.input_data['PV_output'].astype('float')
     
     def __define_range(self):
         self.from_date = self.input_data['DateTime'].min().date()
@@ -169,7 +170,7 @@ class PVData:
 
             self.data.loc[len(self.data)] = {
                 'DateTime' : pd.to_datetime('%s 12:00:00' % (missing_day)),
-                'Pv_output' : 0}
+                'PV_output' : 0}
         
         if self.verbose:
             print('\nMissing days: %s\n' % (len(missing_days)))

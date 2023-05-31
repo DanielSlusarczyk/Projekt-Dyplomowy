@@ -30,7 +30,7 @@ class WData:
         if columns is None:
             return self.data
         else:
-            return self.data[columns]
+            return pd.DataFrame(self.data[columns])
     
     def samples(self, year=None, month=None, day=None, scale=None,feature_range=(0, 1)) -> pd.DataFrame:
 
@@ -52,11 +52,12 @@ class WData:
 
             filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
         
-        return filtered_date
+        return pd.DataFrame(filtered_date)
 
     def __define_types(self):
         self.input_data.rename(columns={'PeriodStart': 'DateTime'}, inplace=True)
         self.input_data['DateTime'] = pd.to_datetime(self.input_data['DateTime'])
+        self.input_data['DateTime'] = self.input_data['DateTime'].dt.tz_convert(None)
 
         self.input_data = self.input_data.drop(['PeriodEnd'], axis=1)
     
