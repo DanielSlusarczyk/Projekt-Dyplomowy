@@ -32,7 +32,7 @@ class WData:
         else:
             return pd.DataFrame(self.data[columns])
     
-    def samples(self, year=None, month=None, day=None, scale=None,feature_range=(0, 1)) -> pd.DataFrame:
+    def samples(self, year=None, month=None, day=None, scale=None, feature_range=(0, 1)) -> pd.DataFrame:
 
         filtered_date = self.data
         if year is not None:
