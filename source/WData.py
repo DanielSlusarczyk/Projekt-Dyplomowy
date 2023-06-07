@@ -53,7 +53,34 @@ class WData:
             filtered_date[scale] = pd.DataFrame(scaler.fit_transform(filtered_date[scale]), columns=scale)
         
         return pd.DataFrame(filtered_date)
+    
+    def group(self, by, function='mean') -> pd.DataFrame:
 
+        data = self.data.drop(['DateTime', 'Time', 'Date'], axis=1)
+
+        if str(by) in self.grouped_data:
+            data = self.grouped_data[str(by)]
+        else:
+            data = data.groupby(by)
+            self.grouped_data[str(by)] = data
+
+        if function == 'mean':
+            return pd.DataFrame(data.mean()).reset_index()
+        
+        if function == 'count':
+            return pd.DataFrame(data.size().reset_index(name='Count'))
+        
+        if function == 'min':
+            return pd.DataFrame(data.min()).reset_index()
+        
+        if function == 'sum':
+            return pd.DataFrame(data.sum()).reset_index()
+
+        if function == 'max':
+            return pd.DataFrame(data.max()).reset_index()
+
+        raise TypeError("Unimplemented method")
+    
     def __define_types(self):
         self.input_data.rename(columns={'PeriodStart': 'DateTime'}, inplace=True)
         self.input_data['DateTime'] = pd.to_datetime(self.input_data['DateTime'])
