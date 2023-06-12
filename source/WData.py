@@ -118,4 +118,4 @@ class WData:
         self.nmb_of_years = len(years)
 
         if self.verbose:
-            print('Summary:\n\tYears: \t%s \n\tMonths: \t%s \n\tDays: \t%s' %(self.nmb_of_years, self.nmb_of_months, self.nmb_of_days))
+            print('Summary:\n\tYears: \t\t%s \n\tMonths: \t%s \n\tDays: \t\t%s' %(self.nmb_of_years, self.nmb_of_months, self.nmb_of_days))
