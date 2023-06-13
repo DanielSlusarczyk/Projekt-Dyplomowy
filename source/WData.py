@@ -11,7 +11,6 @@ class WData:
 
     grouped_data = {}
 
-    max_production = None
     nmb_of_days = None
     nmb_of_months = None
     nmb_of_years = None

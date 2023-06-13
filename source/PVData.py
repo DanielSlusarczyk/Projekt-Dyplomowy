@@ -14,6 +14,7 @@ class PVData:
     grouped_data = {}
     production_data = None
 
+    max_sample = None
     max_production = None
     nmb_of_days = None
     nmb_of_months = None
@@ -196,6 +197,8 @@ class PVData:
 
         years = self.group(['Year'])
         self.nmb_of_years = len(years)
+
+        self.max_sample = self.data['PV_output'].max()
 
         if self.verbose:
             print('Summary:\n\tYears: \t\t%s \n\tMonths: \t%s \n\tDays: \t\t%s' %(self.nmb_of_years, self.nmb_of_months, self.nmb_of_days))
